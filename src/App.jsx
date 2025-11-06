@@ -92,7 +92,7 @@ export default function App() {
         <nav className="mx-auto flex items-center justify-between px-4 py-3">
           <Link to="/" className="font-bold tracking-tight text-white">Check moi ça</Link>
           <span className="text-sm text-[color:var(--pico-muted-color)]">
-            {query ? `Recherche: “${query}”` : "Steam ≤ 15€"}
+            {query ? `Recherche: "${query}"` : "Steam ≤ 15€"}
           </span>
         </nav>
       </header>

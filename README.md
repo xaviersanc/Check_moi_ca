@@ -135,8 +135,16 @@ Les appels à la *Steam Web API* (comme `ISteamUserStats`) nécessiteraient une 
 
 ## Notes CORS / Proxy
 
-* `package.json` contient un champ `proxy` vers `https://steamspy.com` pour faciliter les appels relatifs en développement.
-* Les requêtes problématiques (CORS) passent automatiquement par `allorigins.win`.
+* **En développement** : `package.json` contient un champ `proxy` vers `https://steamspy.com` pour faciliter les appels relatifs.
+* **En production (Vercel)** : utilisation de routes API serverless dans `/api` qui agissent comme proxy pour contourner les CORS.
+* Les requêtes problématiques (CORS) passent automatiquement par `allorigins.win` en dernier recours.
+
+### Routes API Vercel
+
+* `/api/steamspy?appid=XXX` — Proxy serverless pour SteamSpy
+* `/api/steamstore?appid=XXX` — Proxy serverless pour Steam Store API
+
+Ces routes sont automatiquement déployées comme fonctions serverless sur Vercel.
 
 ---
 
