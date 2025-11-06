@@ -148,6 +148,72 @@ Ces routes sont automatiquement déployées comme fonctions serverless sur Verce
 
 ---
 
+## Résolution des problèmes de déploiement Vercel
+
+### Problème rencontré : "Aucune donnée" en production
+
+**Symptômes** :
+* L'application fonctionnait en local (`npm start`)
+* Une fois déployée sur Vercel, affichait "Aucune donnée"
+* Erreurs CORS dans la console : `Cross-Origin Read Blocking (CORB) blocked a cross-origin response`
+
+**Cause racine** :
+* Le proxy défini dans `package.json` (`"proxy": "https://steamspy.com"`) ne fonctionne **qu'en développement local**
+* En production, les appels directs vers SteamSpy et Steam Store sont bloqués par les politiques CORS
+* Le fallback vers AllOrigins n'était pas suffisamment fiable
+
+### Solutions testées
+
+#### ❌ Tentative 1 : Configuration `vercel.json` avec `builds` et `routes`
+```json
+{
+  "version": 2,
+  "builds": [...],
+  "routes": [...]
+}
+```
+**Résultat** : Erreur `Uncaught SyntaxError: Unexpected token '<'` - configuration incompatible avec Create React App
+
+#### ✅ Solution finale : Routes API serverless + configuration simplifiée
+
+**Fichiers créés** :
+* `/api/steamspy.js` - Fonction serverless Node.js qui proxy les requêtes vers SteamSpy
+* `/api/steamstore.js` - Fonction serverless Node.js qui proxy les requêtes vers Steam Store
+
+**Fichiers modifiés** :
+* `/src/components/steamspy.js` - Priorise `/api/steamspy` en production
+* `/src/components/steamStore.js` - Priorise `/api/steamstore` en production
+* `/vercel.json` - Configuration simplifiée avec `rewrites`
+
+**Configuration finale de `vercel.json`** :
+```json
+{
+  "rewrites": [
+    { "source": "/api/steamspy", "destination": "/api/steamspy.js" },
+    { "source": "/api/steamstore", "destination": "/api/steamstore.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+**Résultat** : ✅ **Application fonctionnelle en production**
+
+### Architecture de récupération résiliente
+
+Les composants utilisent une stratégie de fallback en 3 étapes :
+
+1. **Premier essai** : Route API Vercel serverless (`/api/steamspy` ou `/api/steamstore`)
+   * Contourne CORS côté serveur
+   * Rapide et fiable
+2. **Deuxième essai** : Appel direct à l'API
+   * Peut fonctionner selon les politiques CORS
+3. **Troisième essai** : Proxy AllOrigins
+   * Fallback ultime si tout échoue
+
+Cette approche assure une disponibilité maximale des données.
+
+---
+
 ## Debug & problèmes connus
 
 * Si `react-scripts` dans `package-lock.json` a pour valeur `^0.0.0`, remplacer manuellement par :
@@ -163,6 +229,7 @@ Ces routes sont automatiquement déployées comme fonctions serverless sur Verce
   ```
 
 * Les fonctions de `src/components/net.js` gèrent automatiquement timeout et retries pour stabiliser les appels réseau.
+* Les images Steam peuvent occasionnellement être bloquées par CORS, mais cela n'affecte pas la récupération des données principales.
 
 ---
 
