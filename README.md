@@ -1,5 +1,5 @@
 ````markdown
-# The Courrier — Installation & Mise en route
+# Check moi ça — Installation & Mise en route
 
 Projet React configuré avec **Tailwind CSS** pour la mise en page et un point d’entrée fonctionnel.
 
@@ -10,7 +10,7 @@ Projet React configuré avec **Tailwind CSS** pour la mise en page et un point d
 - **Node.js ≥ 16**
 - **npm ≥ 8**
 
-Vérifie :
+Vérification :
 ```bash
 node -v
 npm -v
@@ -21,7 +21,7 @@ npm -v
 ## 2. Structure du projet
 
 ```
-The_Courrier/
+Check_moi_ca/
 ├─ public/
 │  └─ index.html
 ├─ src/
@@ -32,183 +32,147 @@ The_Courrier/
 ├─ package.json
 ├─ package-lock.json
 ├─ tailwind.config.js
-└─ postcss.config.js
 ```
 
 ---
 
-## 3. Installation
+# Check_moi_ca
 
-Depuis la racine du projet :
+Application React qui agrège des données publiques Steam afin d’afficher une fiche de jeu complète : prix (via Steam Store ou SteamSpy), description courte, tags populaires et statistiques publiques (propriétaires estimés, pic de joueurs, temps de jeu moyen).
 
-```bash
-npm install
-```
+## Pitch — quoi / pourquoi / pour qui
 
-Si tu démarres de zéro :
+* **Quoi** : affichage d’une fiche de jeu Steam en combinant les données de la Steam Store et de SteamSpy.
+* **Pourquoi** : obtenir rapidement les informations clés d’un jeu (prix, tags, statistiques) sans ouvrir plusieurs services.
+* **Pour qui** : joueurs, curateurs de promotions, développeurs front cherchant un exemple d’intégration d’APIs publiques.
 
-```bash
-npx create-react-app the_courrier
-cd the_courrier
-```
+## Stack technique
+
+* React (JSX) avec React Router
+* JavaScript (ESModules)
+* Tailwind CSS + Pico.css pour le style
+* create-react-app (`react-scripts`)
+
+Fichiers principaux :
+
+* `src/index.js` — point d’entrée et gestion du routing
+* `src/App.jsx` — page d’accueil (liste et recherche de jeux)
+* `src/pages/GameDetails.jsx` — page de détail d’un jeu (agrégation Steam Store + SteamSpy)
+* `src/components/steamStore.js` — wrapper pour l’API Steam Store
+* `src/components/steamspy.js` — wrapper pour l’API SteamSpy
+* `src/components/net.js` — utilitaires réseau (timeouts, retries, backoff)
+
+## Architecture & routing
+
+* **Routes principales** :
+
+  1. `/` — page d’accueil (`App.jsx`)
+  2. `/steam/app/:appid` — fiche d’un jeu (`GameDetails.jsx`)
+
+* **Flow pour `GameDetails`** :
+
+  1. Deux appels parallèles :
+
+     * `fetchSteamStoreDetails(appid)` (prix, description, éditeur/développeur)
+     * `fetchSteamSpyApp(appid)` (statistiques, tags, données d’usage)
+  2. Fusion des résultats : l’application privilégie Steam Store pour les métadonnées, et SteamSpy pour les statistiques et tags.
+  3. Affichage final : image header CDN, nom, développeur/éditeur, prix, réduction, tags et données d’activité.
+
+## Endpoints externes appelés
+
+1. **Steam Store — appdetails**
+
+   * URL : `https://store.steampowered.com/api/appdetails?appids={APPID}&l=french`
+   * Documentation : [store.steampowered.com/api](https://store.steampowered.com/api/)
+   * Utilisé par : `src/components/steamStore.js`
+
+2. **SteamSpy — appdetails**
+
+   * URL : `https://steamspy.com/api.php?request=appdetails&appid={APPID}`
+   * Documentation : [steamspy.com/api.php](https://steamspy.com/api.php)
+   * Utilisé par : `src/components/steamspy.js`
+
+3. **AllOrigins (proxy public, fallback CORS)**
+
+   * URL : `https://api.allorigins.win/raw?url={ENCODED_URL}`
+   * Documentation : [allorigins.win](https://allorigins.win/)
+   * Utilisé en secours si le navigateur bloque les appels directs (CORS).
+
+4. **CDN & page Steam**
+
+   * Page : `https://store.steampowered.com/app/{APPID}`
+   * Image : `https://cdn.cloudflare.steamstatic.com/steam/apps/{APPID}/header.jpg`
+
+**Remarque :** les endpoints Steam Store et SteamSpy utilisés ici sont publics et ne nécessitent pas de clé.
+Les appels à la *Steam Web API* (comme `ISteamUserStats`) nécessiteraient une clé d’API Steam : [https://steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey)
 
 ---
 
-## 3.1 Problème connu — `react-scripts` à `^0.0.0`
+## Comment lancer le projet
 
-Il peut arriver qu’après un `npm install`, la ligne correspondante dans `package-lock.json` soit :
-
-```json
-"react-scripts": "^0.0.0"
-```
-
-Cela empêche l’installation complète et bloque la commande `npm start`.
-
-**Solution :**
-
-1. Ouvre `package-lock.json` dans un éditeur.
-2. Remplace manuellement la ligne par :
-
-   ```json
-   "react-scripts": "^5.0.1"
-   ```
-3. Sauvegarde le fichier.
-4. Réinstalle :
+1. **Installer les dépendances**
 
    ```bash
    npm install
    ```
 
-Après correction, `npm start` fonctionnera correctement.
+2. **(Optionnel) Créer un fichier `.env`**
+
+   ```text
+   # .env (exemple)
+   REACT_APP_USD_EUR_RATE=0.95
+   ```
+
+3. **Lancer le serveur de développement**
+
+   ```bash
+   npm start
+   ```
+
+   L’application démarre sur [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 4. Installation et configuration de Tailwind CSS
+## Notes CORS / Proxy
 
-```bash
-npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
-```
-
-**`tailwind.config.js`**
-
-```js
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: ["./src/**/*.{js,jsx,ts,tsx}", "./public/index.html"],
-  theme: { extend: {} },
-  plugins: [],
-};
-```
-
-**`postcss.config.js`** (généré automatiquement)
-
-```js
-module.exports = {
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
-  },
-};
-```
-
-**`src/index.css`**
-
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-html,body,#root{height:100%}
-body{margin:0}
-```
+* `package.json` contient un champ `proxy` vers `https://steamspy.com` pour faciliter les appels relatifs en développement.
+* Les requêtes problématiques (CORS) passent automatiquement par `allorigins.win`.
 
 ---
 
-## 5. Fichiers principaux
+## Debug & problèmes connus
 
-**`public/index.html`**
+* Si `react-scripts` dans `package-lock.json` a pour valeur `^0.0.0`, remplacer manuellement par :
 
-```html
-<!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>The Courrier</title>
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
-</html>
-```
+  ```json
+  "react-scripts": "^5.0.1"
+  ```
 
-**`src/index.js`**
+  puis relancer :
 
-```js
-import React from "react";
-import ReactDOM from "react-dom/client";
-import "./index.css";
-import App from "./App";
+  ```bash
+  npm install
+  ```
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
-```
-
-**`src/App.jsx`**
-
-```jsx
-export default function App() {
-  return (
-    <div className="min-h-full bg-neutral-950 text-neutral-100 p-6">
-      <h1 className="text-3xl font-bold">The Courrier</h1>
-      <p className="mt-2 text-neutral-400">Application React + Tailwind opérationnelle.</p>
-    </div>
-  );
-}
-```
+* Les fonctions de `src/components/net.js` gèrent automatiquement timeout et retries pour stabiliser les appels réseau.
 
 ---
 
-## ▶6. Démarrage du serveur
+## Exemples d’usage
 
-```bash
-npm start
-```
-
-L’application se lance sur :
-
-```
-http://localhost:3000/
-```
+* Lancer : `npm start`
+* Accéder à un jeu en local : [http://localhost:3000/steam/app/570](http://localhost:3000/steam/app/570)
 
 ---
 
-## 7. Dépannage courant
+## Améliorations possibles
 
-| Problème                    | Cause probable                                             | Solution                                                             |
-| --------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------- |
-| `react-scripts` non reconnu | Mauvaise version ou ligne erronée dans `package-lock.json` | Corriger manuellement `"react-scripts": "^5.0.1"` puis `npm install` |
-| Écran vide                  | `App.jsx` vide ou erreur JavaScript                        | Vérifier la console du navigateur                                    |
-| Tailwind inactif            | Mauvais `content` dans `tailwind.config.js`                | Corriger et relancer `npm start`                                     |
-| Port déjà occupé            | Conflit sur `3000`                                         | `npm start -- --port=3001`                                           |
+* Ajouter un filtrage par prix, genre ou note Steam.
+* Intégrer une galerie d’images et des liens vers d’autres magasins.
+* Ajouter des tests unitaires (ex. : `getJsonResilient`).
+* Implémenter un cache local (IndexedDB / localStorage).
 
 ---
 
-## 8. Résultat attendu
+Dernière mise à jour : **2025-11-06**
 
-* Page noire (`bg-neutral-950`)
-* Texte blanc **“The Courrier”**
-* Aucun message d’erreur dans la console
-
----
-
-## 9. Étapes suivantes
-
-* Recréer la page d’accueil façon **Instant Gaming** avec Tailwind.
-* Ajouter la grille de jeux, boutons et sections.
-* Mettre en place la navigation (React Router) si nécessaire.
-
----
-
-**Projet en cours de développement — dernière mise à jour :** *2025-10-29*
