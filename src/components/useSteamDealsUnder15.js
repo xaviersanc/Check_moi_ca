@@ -1,7 +1,5 @@
-// src/components/useSteamDealsUnder15.js
 import { useEffect, useState } from "react";
 
-/* Tri popularité via Wilson (95%) sur avis Steam */
 const USD_EUR_RATE =
   Number(process.env.REACT_APP_USD_EUR_RATE) > 0 ? Number(process.env.REACT_APP_USD_EUR_RATE) : 0.95;
 
@@ -69,7 +67,7 @@ export default function useSteamDealsUnder15() {
 
           return {
             id: raw.dealID,
-            steamAppID: raw.steamAppID ?? null, // ← nécessaire pour router vers /steam/app/:appid
+            steamAppID: raw.steamAppID ?? null, 
             title: raw.title,
             price: raw.salePrice === "0.00" ? "Gratuit" : eur ?? `${Number(raw.salePrice).toFixed(2)} $`,
             platform: "Steam",

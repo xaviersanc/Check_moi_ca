@@ -1,4 +1,3 @@
-// src/App.jsx — "Voir l’offre" ouvre la page locale /steam/app/:appid (recherche comprise)
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import useSteamDealsUnder15 from "./components/useSteamDealsUnder15.js";
@@ -71,9 +70,9 @@ function CardsGrid({ items }) {
 
 export default function App() {
   const [q, setQ] = useState("");
-  const [query, setQuery] = useState(""); // vide => mode par défaut (≤15€)
-  const search = useSteamDealsByTitle(query);     // actif si query !== ""
-  const under15 = useSteamDealsUnder15();         // affiché uniquement si query === ""
+  const [query, setQuery] = useState(""); 
+  const search = useSteamDealsByTitle(query);    
+  const under15 = useSteamDealsUnder15();         
 
   const activeLoading = query ? search.loading : under15.loading;
   const activeError   = query ? search.error   : under15.error;

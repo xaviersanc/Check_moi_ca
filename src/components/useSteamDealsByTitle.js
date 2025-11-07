@@ -1,4 +1,3 @@
-// src/components/useSteamDealsByTitle.js
 import { useEffect, useState } from "react";
 
 const API = "https://www.cheapshark.com/api/1.0";
@@ -25,7 +24,7 @@ function steamImageCandidates(appId) {
 }
 
 export default function useSteamDealsByTitle(title) {
-  const [deals, setDeals] = useState(null);   // null = pas lancé ; [] = aucun résultat
+  const [deals, setDeals] = useState(null);   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -38,7 +37,6 @@ export default function useSteamDealsByTitle(title) {
       setLoading(true);
       setError(null);
       try {
-        // IMPORTANT: pas de onSale=1 -> récupère aussi les jeux non remisés
         const params = new URLSearchParams({
           storeID: "1",         // Steam
           pageSize: "60",
@@ -62,10 +60,10 @@ export default function useSteamDealsByTitle(title) {
 
           return {
             id: d.dealID,
-            steamAppID: appId,                              // ← nécessaire pour le routing interne /steam/app/:appid
+            steamAppID: appId,                              
             title: d.title,
             price: priceLabel,
-            priceValueEUR: eurVal,                          // nombre en €
+            priceValueEUR: eurVal,                          
             platform: "Steam",
             link: appId
               ? `https://store.steampowered.com/app/${appId}` // fallback externe si utilisé
@@ -74,7 +72,7 @@ export default function useSteamDealsByTitle(title) {
           };
         });
 
-        setDeals(mapped); // [] => "aucun résultat"
+        setDeals(mapped); 
       } catch (e) {
         setError(e.message || "Erreur");
         setDeals(null);

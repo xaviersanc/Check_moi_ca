@@ -1,4 +1,3 @@
-// src/pages/GameDetails.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { fetchSteamSpyApp } from "../components/steamspy";
@@ -15,7 +14,6 @@ function stripHtml(html) {
   return tmp.replace(/\s+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
-// Conversion prix → EUR (fallback taux si non fourni)
 const USD_EUR_RATE =
   Number(process.env.REACT_APP_USD_EUR_RATE) > 0 ? Number(process.env.REACT_APP_USD_EUR_RATE) : 0.95;
 function fmtEUR(valueEUR) {
@@ -28,7 +26,7 @@ function priceToEUR({ store, spy }) {
     if (po.currency === "EUR") return { priceText: fmtEUR(po.final / 100), discount: po.discount_percent || 0 };
     return { priceText: fmtEUR((po.final / 100) * USD_EUR_RATE), discount: po.discount_percent || 0 };
   }
-  // 2) SteamSpy (USD cents)
+  // 2) SteamSpy
   if (spy && typeof spy.price === "number" && spy.price > 0) {
     return { priceText: fmtEUR((spy.price / 100) * USD_EUR_RATE), discount: Number(spy.discount || 0) };
   }
@@ -112,9 +110,7 @@ export default function GameDetails() {
         </div>
       </div>
 
-      {/* Layout principal simplifié */}
       <div className="mx-auto max-w-[1100px] px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Colonne gauche */}
         <div className="lg:col-span-2">
           {headerImg && (
             <img
@@ -146,7 +142,7 @@ export default function GameDetails() {
           )}
         </div>
 
-        {/* Colonne droite (achat + stats) */}
+        {/* Colonne droite (stats) */}
         <aside className="lg:col-span-1">
           <article className="rounded-xl border border-[#1e1f22] bg-[#313338] p-4">
             <h3 className="text-base font-semibold mb-3">Acheter</h3>

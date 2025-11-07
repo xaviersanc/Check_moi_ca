@@ -1,10 +1,8 @@
-// src/components/steamspy.js
 import { getJsonResilient } from "./net";
 
 export async function fetchSteamSpyApp(appid) {
   if (!appid) throw new Error("appid manquant");
   
-  // Route API Vercel serverless (production) ou proxy local (dev)
   const vercelApi = `/api/steamspy?appid=${appid}`;
   const abs = `https://steamspy.com/api.php?request=appdetails&appid=${appid}`;
   const prox = `https://api.allorigins.win/raw?url=${encodeURIComponent(abs)}`;

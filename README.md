@@ -1,253 +1,137 @@
-````markdown
-# Check moi ça — Installation & Mise en route
+# Check moi ça
 
-Projet React configuré avec **Tailwind CSS** pour la mise en page et un point d’entrée fonctionnel.
+L’application recense les jeux Steam les moins coûteux et centralise les informations nécessaires pour décider rapidement si un titre vaut l’achat. Elle affiche, en plus du prix, des données d’activité comme le temps de jeu médian sur les deux dernières semaines, l’estimation du nombre de joueurs récents et les tags dominants. Ces éléments permettent d’évaluer en un coup d’œil la popularité actuelle, la tendance d’usage et l’intérêt global du jeu, sans avoir à consulter plusieurs sites ou outils externes.
 
----
-
-## 1. Prérequis
-
-- **Node.js ≥ 16**
-- **npm ≥ 8**
-
-Vérification :
-```bash
-node -v
-npm -v
-````
-
----
-
-## 2. Structure du projet
-
-```
-Check_moi_ca/
-├─ public/
-│  └─ index.html
-├─ src/
-│  ├─ App.jsx
-│  ├─ index.js
-│  ├─ index.css
-│  └─ ...
-├─ package.json
-├─ package-lock.json
-├─ tailwind.config.js
-```
-
----
-
-# Check_moi_ca
-
-Application React qui agrège des données publiques Steam afin d’afficher une fiche de jeu complète : prix (via Steam Store ou SteamSpy), description courte, tags populaires et statistiques publiques (propriétaires estimés, pic de joueurs, temps de jeu moyen).
-
-## Pitch — quoi / pourquoi / pour qui
-
-* **Quoi** : affichage d’une fiche de jeu Steam en combinant les données de la Steam Store et de SteamSpy.
-* **Pourquoi** : obtenir rapidement les informations clés d’un jeu (prix, tags, statistiques) sans ouvrir plusieurs services.
-* **Pour qui** : joueurs, curateurs de promotions, développeurs front cherchant un exemple d’intégration d’APIs publiques.
 
 ## Stack technique
 
-* React (JSX) avec React Router
-* JavaScript (ESModules)
-* Tailwind CSS + Pico.css pour le style
-* create-react-app (`react-scripts`)
+| Technologie                                       | Rôle                                      |
+| ------------------------------------------------- | ----------------------------------------- |
+| React (create-react-app)                          | Framework SPA                             |
+| JavaScript (ES6+)                                 | Logique applicative                       |
+| React Router DOM                                  | Routing                                   |
+| Tailwind CSS + Pico.css                           | Mise en page responsive                   |
+| Netlify / Vercel                                  | Déploiement                               |
+| APIs externes (CheapShark, SteamSpy, Steam Store) | Données prix, métadonnées et statistiques |
 
-Fichiers principaux :
+## Lancer le projet
 
-* `src/index.js` — point d’entrée et gestion du routing
-* `src/App.jsx` — page d’accueil (liste et recherche de jeux)
-* `src/pages/GameDetails.jsx` — page de détail d’un jeu (agrégation Steam Store + SteamSpy)
-* `src/components/steamStore.js` — wrapper pour l’API Steam Store
-* `src/components/steamspy.js` — wrapper pour l’API SteamSpy
-* `src/components/net.js` — utilitaires réseau (timeouts, retries, backoff)
+### Cloner et installer
 
-## Architecture & routing
-
-* **Routes principales** :
-
-  1. `/` — page d’accueil (`App.jsx`)
-  2. `/steam/app/:appid` — fiche d’un jeu (`GameDetails.jsx`)
-
-* **Flow pour `GameDetails`** :
-
-  1. Deux appels parallèles :
-
-     * `fetchSteamStoreDetails(appid)` (prix, description, éditeur/développeur)
-     * `fetchSteamSpyApp(appid)` (statistiques, tags, données d’usage)
-  2. Fusion des résultats : l’application privilégie Steam Store pour les métadonnées, et SteamSpy pour les statistiques et tags.
-  3. Affichage final : image header CDN, nom, développeur/éditeur, prix, réduction, tags et données d’activité.
-
-## Endpoints externes appelés
-
-1. **Steam Store — appdetails**
-
-   * URL : `https://store.steampowered.com/api/appdetails?appids={APPID}&l=french`
-   * Documentation : [store.steampowered.com/api](https://store.steampowered.com/api/)
-   * Utilisé par : `src/components/steamStore.js`
-
-2. **SteamSpy — appdetails**
-
-   * URL : `https://steamspy.com/api.php?request=appdetails&appid={APPID}`
-   * Documentation : [steamspy.com/api.php](https://steamspy.com/api.php)
-   * Utilisé par : `src/components/steamspy.js`
-
-3. **AllOrigins (proxy public, fallback CORS)**
-
-   * URL : `https://api.allorigins.win/raw?url={ENCODED_URL}`
-   * Documentation : [allorigins.win](https://allorigins.win/)
-   * Utilisé en secours si le navigateur bloque les appels directs (CORS).
-
-4. **CDN & page Steam**
-
-   * Page : `https://store.steampowered.com/app/{APPID}`
-   * Image : `https://cdn.cloudflare.steamstatic.com/steam/apps/{APPID}/header.jpg`
-
-**Remarque :** les endpoints Steam Store et SteamSpy utilisés ici sont publics et ne nécessitent pas de clé.
-Les appels à la *Steam Web API* (comme `ISteamUserStats`) nécessiteraient une clé d’API Steam : [https://steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey)
-
----
-
-## Comment lancer le projet
-
-1. **Installer les dépendances**
-
-   ```bash
-   npm install
-   ```
-
-2. **(Optionnel) Créer un fichier `.env`**
-
-   ```text
-   # .env (exemple)
-   REACT_APP_USD_EUR_RATE=0.95
-   ```
-
-3. **Lancer le serveur de développement**
-
-   ```bash
-   npm start
-   ```
-
-   L’application démarre sur [http://localhost:3000](http://localhost:3000)
-
----
-
-## Notes CORS / Proxy
-
-* **En développement** : `package.json` contient un champ `proxy` vers `https://steamspy.com` pour faciliter les appels relatifs.
-* **En production (Vercel)** : utilisation de routes API serverless dans `/api` qui agissent comme proxy pour contourner les CORS.
-* Les requêtes problématiques (CORS) passent automatiquement par `allorigins.win` en dernier recours.
-
-### Routes API Vercel
-
-* `/api/steamspy?appid=XXX` — Proxy serverless pour SteamSpy
-* `/api/steamstore?appid=XXX` — Proxy serverless pour Steam Store API
-
-Ces routes sont automatiquement déployées comme fonctions serverless sur Vercel.
-
----
-
-## Résolution des problèmes de déploiement Vercel
-
-### Problème rencontré : "Aucune donnée" en production
-
-**Symptômes** :
-* L'application fonctionnait en local (`npm start`)
-* Une fois déployée sur Vercel, affichait "Aucune donnée"
-* Erreurs CORS dans la console : `Cross-Origin Read Blocking (CORB) blocked a cross-origin response`
-
-**Cause racine** :
-* Le proxy défini dans `package.json` (`"proxy": "https://steamspy.com"`) ne fonctionne **qu'en développement local**
-* En production, les appels directs vers SteamSpy et Steam Store sont bloqués par les politiques CORS
-* Le fallback vers AllOrigins n'était pas suffisamment fiable
-
-### Solutions testées
-
-#### ❌ Tentative 1 : Configuration `vercel.json` avec `builds` et `routes`
-```json
-{
-  "version": 2,
-  "builds": [...],
-  "routes": [...]
-}
-```
-**Résultat** : Erreur `Uncaught SyntaxError: Unexpected token '<'` - configuration incompatible avec Create React App
-
-#### ✅ Solution finale : Routes API serverless + configuration simplifiée
-
-**Fichiers créés** :
-* `/api/steamspy.js` - Fonction serverless Node.js qui proxy les requêtes vers SteamSpy
-* `/api/steamstore.js` - Fonction serverless Node.js qui proxy les requêtes vers Steam Store
-
-**Fichiers modifiés** :
-* `/src/components/steamspy.js` - Priorise `/api/steamspy` en production
-* `/src/components/steamStore.js` - Priorise `/api/steamstore` en production
-* `/vercel.json` - Configuration simplifiée avec `rewrites`
-
-**Configuration finale de `vercel.json`** :
-```json
-{
-  "rewrites": [
-    { "source": "/api/steamspy", "destination": "/api/steamspy.js" },
-    { "source": "/api/steamstore", "destination": "/api/steamstore.js" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
+```bash
+git clone https://github.com/xaviersanc/Check_moi_ca.git
+cd Check_moi_ca
+npm install
 ```
 
-**Résultat** : ✅ **Application fonctionnelle en production**
+### Configuration `.env`
 
-### Architecture de récupération résiliente
+```bash
+cp .env.example .env
+```
 
-Les composants utilisent une stratégie de fallback en 3 étapes :
+`.env.example` :
 
-1. **Premier essai** : Route API Vercel serverless (`/api/steamspy` ou `/api/steamstore`)
-   * Contourne CORS côté serveur
-   * Rapide et fiable
-2. **Deuxième essai** : Appel direct à l'API
-   * Peut fonctionner selon les politiques CORS
-3. **Troisième essai** : Proxy AllOrigins
-   * Fallback ultime si tout échoue
+```
+REACT_APP_USD_EUR_RATE=0.95
+DISABLE_ESLINT_PLUGIN=true
+```
 
-Cette approche assure une disponibilité maximale des données.
+### Démarrage
 
----
+```bash
+npm start
+```
 
-## Debug & problèmes connus
+Application accessible via [http://localhost:3000](http://localhost:3000)
 
-* Si `react-scripts` dans `package-lock.json` a pour valeur `^0.0.0`, remplacer manuellement par :
+### Build
 
-  ```json
-  "react-scripts": "^5.0.1"
-  ```
+```bash
+npm run build
+```
 
-  puis relancer :
+## Architecture technique
 
-  ```bash
-  npm install
-  ```
+```
+src/
+├─ App.jsx                  # Accueil + recherche + liste des jeux
+├─ pages/
+│  └─ GameDetails.jsx       # Fiche jeu (fusion Steam Store + SteamSpy)
+├─ components/
+│  ├─ useSteamDealsUnder15.js
+│  ├─ useSteamDealsByTitle.js
+│  ├─ steamspy.js           # Statistiques
+│  ├─ steamStore.js         # Métadonnées et prix
+│  └─ net.js                # Timeouts, retries, fallback
+├─ index.js
+├─ index.css
+```
 
-* Les fonctions de `src/components/net.js` gèrent automatiquement timeout et retries pour stabiliser les appels réseau.
-* Les images Steam peuvent occasionnellement être bloquées par CORS, mais cela n'affecte pas la récupération des données principales.
+### Routing
 
----
+| Route               | Description                     |
+| ------------------- | ------------------------------- |
+| `/`                 | Accueil, recherche, deals ≤ 15€ |
+| `/steam/app/:appid` | Détails d’un jeu                |
 
-## Exemples d’usage
+### Flow des données (fiche jeu)
 
-* Lancer : `npm start`
-* Accéder à un jeu en local : [http://localhost:3000/steam/app/570](http://localhost:3000/steam/app/570)
+1. Appel Steam Store (description, éditeurs, prix)
+2. Appel SteamSpy (statistiques, tags, popularité)
+3. Fusion des résultats
+4. Affichage header CDN, prix, promotions éventuelles, tags et statistiques d’usage
 
----
+## Endpoints API
 
-## Améliorations possibles
+### CheapShark (prix)
 
-* Ajouter un filtrage par prix, genre ou note Steam.
-* Intégrer une galerie d’images et des liens vers d’autres magasins.
-* Ajouter des tests unitaires (ex. : `getJsonResilient`).
-* Implémenter un cache local (IndexedDB / localStorage).
+* Liste ≤ 15€
+  `https://www.cheapshark.com/api/1.0/deals?storeID=1&upperPrice=15`
+* Recherche jeu par titre
+  `https://www.cheapshark.com/api/1.0/deals?storeID=1&title={titre}`
+* Documentation : [https://www.postman.com/cheapshark/cheapshark-s-public-workspace/](https://www.postman.com/cheapshark/cheapshark-s-public-workspace/)
 
----
+### SteamSpy (statistiques)
 
-Dernière mise à jour : **2025-11-06**
+* App details
+  `https://steamspy.com/api.php?request=appdetails&appid={APPID}`
+* Documentation : [https://steamspy.com/api.php](https://steamspy.com/api.php)
+
+### Steam Store (métadonnées + prix + description)
+
+* App details
+  `https://store.steampowered.com/api/appdetails?appids={APPID}&l=french&cc=fr`
+* Documentation : [https://store.steampowered.com/api/](https://store.steampowered.com/api/)
+
+### CDN Steam (images)
+
+* Header
+  `https://cdn.cloudflare.steamstatic.com/steam/apps/{APPID}/header.jpg`
+
+### Proxy / fallback (si CORS)
+
+* `https://api.allorigins.win/raw?url={ENCODED_URL}`
+  Utilisé automatiquement si les appels directs échouent.
+
+## Captures d’écran
+
+### Desktop
+
+
+![mobile](README\Page_d'accueil_ordi.png)
+![mobile](README\Detail_ordi.png)
+![mobile](README\Recherche1_ordi.png)
+![mobile](README\Recherche2_ordi.png)
+
+### Mobile
+
+![mobile](README\Page_d'accueil_mobile.jpg)
+![mobile](README\Detail_mobile.jpg)
+![mobile](README\Recherche_mobile.jpg)
+
+## Notes de déploiement
+
+En production via Vercel, les appels sont routés par des fonctions serverless `/api/steamspy` et `/api/steamstore` pour contourner CORS.
+Fallback automatique vers AllOrigins si nécessaire.
 
