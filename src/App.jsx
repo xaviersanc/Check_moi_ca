@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import useSteamDealsUnder5 from "./components/useSteamDealsUnder5.js";
 import useSteamDealsUnder15 from "./components/useSteamDealsUnder15.js";
 import useSteamDealsByTitle from "./components/useSteamDealsByTitle.js";
 
@@ -71,18 +72,41 @@ function CardsGrid({ items }) {
 export default function App() {
   const [q, setQ] = useState("");
   const [query, setQuery] = useState(""); 
+  const [maxPrice, setMaxPrice] = useState(15);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
   const search = useSteamDealsByTitle(query);    
   const under15 = useSteamDealsUnder15();         
+  const under5 = useSteamDealsUnder5();
 
-  const activeLoading = query ? search.loading : under15.loading;
-  const activeError   = query ? search.error   : under15.error;
-  const activeDeals   = query ? search.deals   : under15.deals;
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDocClick = (event) => {
+      if (!menuRef.current || menuRef.current.contains(event.target)) return;
+      setMenuOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
 
-  let under15Group = [];
-  let over15Group  = [];
+  const activeDefault = maxPrice === 5 ? under5 : under15;
+  const activeLoading = query ? search.loading : activeDefault.loading;
+  const activeError   = query ? search.error   : activeDefault.error;
+  const activeDeals   = query ? search.deals   : activeDefault.deals;
+  const priceLimit = maxPrice;
+
+  let underLimitGroup = [];
+  let overLimitGroup  = [];
   if (query && Array.isArray(activeDeals)) {
-    under15Group = activeDeals.filter((d) => Number(d.priceValueEUR) <= 15);
-    over15Group  = activeDeals.filter((d) => !(Number(d.priceValueEUR) <= 15));
+    underLimitGroup = activeDeals.filter((d) => Number(d.priceValueEUR) <= priceLimit);
+    overLimitGroup  = activeDeals.filter((d) => !(Number(d.priceValueEUR) <= priceLimit));
   }
 
   return (
@@ -90,9 +114,57 @@ export default function App() {
       <header className="sticky top-0 z-10 border-b border-white/10 backdrop-blur">
         <nav className="mx-auto flex items-center justify-between px-4 py-3">
           <Link to="/" className="font-bold tracking-tight text-white">Check moi ça</Link>
-          <span className="text-sm text-[color:var(--pico-muted-color)]">
-            {query ? `Recherche: "${query}"` : "Steam ≤ 15€"}
-          </span>
+          {query ? (
+            <span className="text-sm text-[color:var(--pico-muted-color)]">{`Recherche: "${query}"`}</span>
+          ) : (
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                className="flex items-center gap-2 text-sm text-[color:var(--pico-muted-color)] hover:text-white"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((open) => !open)}
+              >
+                {`Steam ≤ ${maxPrice}€`}
+                <span className="text-xs">v</span>
+              </button>
+              {menuOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-2 w-40 rounded-md border border-[#1e1f22] bg-[#313338] shadow-lg"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-white/5 ${
+                      maxPrice === 5 ? "opacity-60" : ""
+                    }`}
+                    disabled={maxPrice === 5}
+                    onClick={() => {
+                      setMaxPrice(5);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Steam ≤ 5€
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-white/5 ${
+                      maxPrice === 15 ? "opacity-60" : ""
+                    }`}
+                    disabled={maxPrice === 15}
+                    onClick={() => {
+                      setMaxPrice(15);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    Steam ≤ 15€
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </nav>
       </header>
 
@@ -126,20 +198,20 @@ export default function App() {
 
             {query && Array.isArray(activeDeals) && (
               <>
-                <h2 className="mb-3 text-lg font-semibold">Jeux de moins de 15€</h2>
-                {under15Group.length === 0 ? (
+                <h2 className="mb-3 text-lg font-semibold">{`Jeux de moins de ${priceLimit}€`}</h2>
+                {underLimitGroup.length === 0 ? (
                   <p className="text-center text-[#b5bac1]">Aucun résultat</p>
                 ) : (
-                  <CardsGrid items={under15Group} />
+                  <CardsGrid items={underLimitGroup} />
                 )}
 
                 <hr className="my-8 border-t border-[var(--pico-border-color)]" />
 
-                <h2 className="mb-3 text-lg font-semibold">Autres résultats (≥ 15€)</h2>
-                {over15Group.length === 0 ? (
+                <h2 className="mb-3 text-lg font-semibold">{`Autres résultats (≥ ${priceLimit}€)`}</h2>
+                {overLimitGroup.length === 0 ? (
                   <p className="text-center text-[#b5bac1]">Aucun autre résultat</p>
                 ) : (
-                  <CardsGrid items={over15Group} />
+                  <CardsGrid items={overLimitGroup} />
                 )}
               </>
             )}
