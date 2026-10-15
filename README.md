@@ -10,7 +10,7 @@ L’application recense les jeux Steam les moins coûteux et centralise les info
 | React (create-react-app)                          | Framework SPA                             |
 | JavaScript (ES6+)                                 | Logique applicative                       |
 | React Router DOM                                  | Routing                                   |
-| Tailwind CSS + Pico.css                           | Mise en page responsive                   |
+| Tailwind CSS + variables CSS (thèmes sombre/clair) | Mise en page responsive, identité visuelle |
 | Netlify / Vercel                                  | Déploiement                               |
 | APIs externes (CheapShark, SteamSpy, Steam Store) | Données prix, métadonnées et statistiques |
 
@@ -59,7 +59,9 @@ src/
 ├─ pages/
 │  └─ GameDetails.jsx       # Fiche jeu (fusion Steam Store + SteamSpy)
 ├─ components/
-│  ├─ useSteamDealsUnder15.js
+│  ├─ useSteamDealsUnder.js   # offres ≤ 5€ / ≤ 15€
+│  ├─ dealUtils.js            # mapping et formatage communs
+│  ├─ Header.jsx              # en-tête + bascule de thème
 │  ├─ useSteamDealsByTitle.js
 │  ├─ steamspy.js           # Statistiques
 │  ├─ steamStore.js         # Métadonnées et prix

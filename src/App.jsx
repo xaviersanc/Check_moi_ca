@@ -1,69 +1,92 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import useSteamDealsUnder5 from "./components/useSteamDealsUnder5.js";
-import useSteamDealsUnder15 from "./components/useSteamDealsUnder15.js";
+import Header from "./components/Header.jsx";
+import useSteamDealsUnder from "./components/useSteamDealsUnder.js";
 import useSteamDealsByTitle from "./components/useSteamDealsByTitle.js";
+
+const PRICE_LIMITS = [5, 15];
 
 function DealImage({ images, title }) {
   const [idx, setIdx] = useState(0);
-  if (!images?.length) return null;
-  const src = images[idx] || null;
-  if (!src) return null;
+  const src = images?.[idx];
+  if (!src) return <div className="game-img" aria-hidden="true" />;
   return (
     <img
       src={src}
-      alt={title}
-      className="game-img h-40 sm:h-48 xl:h-56"
-      onError={() => {
-        const next = idx + 1;
-        if (next < images.length) setIdx(next);
-      }}
+      alt=""
+      loading="lazy"
+      className="game-img"
+      onError={() => setIdx((i) => (i + 1 < images.length ? i + 1 : i))}
     />
   );
 }
 
 function DealCTA({ deal }) {
   return deal.steamAppID ? (
-    <Link
-      to={`/steam/app/${deal.steamAppID}`}
-      className="rounded-md bg-[var(--pico-primary)] px-2 py-1 text-xs font-medium text-white hover:bg-[var(--pico-primary-hover)] sm:px-3 sm:py-1.5 sm:text-sm"
-      aria-label={`Voir la fiche — ${deal.title}`}
-    >
+    <Link to={`/steam/app/${deal.steamAppID}`} className="btn btn-blue btn-sm" aria-label={`Voir la fiche — ${deal.title}`}>
       Voir la fiche
     </Link>
   ) : (
-    <a
-      href={deal.link}
-      target="_blank"
-      rel="noreferrer"
-      className="rounded-md bg-[var(--pico-primary)] px-2 py-1 text-xs font-medium text-white hover:bg-[var(--pico-primary-hover)] sm:px-3 sm:py-1.5 sm:text-sm"
-      aria-label={`Voir l’offre — ${deal.title}`}
-    >
+    <a href={deal.link} target="_blank" rel="noreferrer" className="btn btn-blue btn-sm" aria-label={`Voir l’offre — ${deal.title} (nouvel onglet)`}>
       Voir l’offre ↗
     </a>
   );
 }
 
+function Rating({ percent, count }) {
+  const n = Number(count);
+  if (!n || percent == null) return null;
+  return (
+    <p className="rating mt-1">
+      <strong>{percent} %</strong> d’avis positifs · {new Intl.NumberFormat("fr-FR").format(n)} avis
+    </p>
+  );
+}
+
 function CardsGrid({ items }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-4">
+    <ul className="cards-grid" style={{ listStyle: "none", margin: 0, padding: 0 }}>
       {items.map((g) => (
-        <article key={g.id} className="game-card">
-          <div className="relative">
-            <DealImage images={g.images || (g.img ? [g.img] : [])} title={g.title} />
-            <span className="absolute left-2 top-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] sm:text-xs">
-              {g.platform || "Steam"}
-            </span>
-          </div>
-
-          <div className="p-3 sm:p-4">
-            <h3 className="line-clamp-2 text-sm font-semibold sm:text-base xl:text-lg">{g.title}</h3>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="price text-sm sm:text-base">{g.price}</span>
-              <DealCTA deal={g} />
+        <li key={g.id}>
+          <article className="game-card h-full">
+            <div className="game-media">
+              <DealImage images={g.images} title={g.title} />
+              <span className="platform-chip">{g.platform || "Steam"}</span>
             </div>
+            <div className="flex flex-1 flex-col justify-between gap-3 p-3">
+              <div>
+                <h3 className="game-title line-clamp-2">{g.title}</h3>
+                <Rating percent={g.steamRatingPercent} count={g.steamRatingCount} />
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="price-block">
+                  {g.discount && <span className="discount-badge">-{g.discount}%</span>}
+                  <span className="price-lines">
+                    {g.oldPrice && <span className="price-old"><span className="sr-only">Ancien prix </span>{g.oldPrice}</span>}
+                    <span className="price">{g.price}</span>
+                  </span>
+                </div>
+                <DealCTA deal={g} />
+              </div>
+            </div>
+          </article>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function SkeletonGrid() {
+  return (
+    <div className="cards-grid" aria-hidden="true">
+      {Array.from({ length: 9 }, (_, i) => (
+        <div key={i} className="game-card">
+          <div className="game-media skeleton" style={{ borderRadius: 0 }} />
+          <div className="space-y-3 p-3">
+            <div className="skeleton h-4 w-3/4" />
+            <div className="skeleton h-9 w-full" />
           </div>
-        </article>
+        </div>
       ))}
     </div>
   );
@@ -71,153 +94,114 @@ function CardsGrid({ items }) {
 
 export default function App() {
   const [q, setQ] = useState("");
-  const [query, setQuery] = useState(""); 
+  const [query, setQuery] = useState("");
   const [maxPrice, setMaxPrice] = useState(15);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
-  const search = useSteamDealsByTitle(query);    
-  const under15 = useSteamDealsUnder15();         
-  const under5 = useSteamDealsUnder5();
+  const search = useSteamDealsByTitle(query);
+  const browse = useSteamDealsUnder(maxPrice);
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onDocClick = (event) => {
-      if (!menuRef.current || menuRef.current.contains(event.target)) return;
-      setMenuOpen(false);
-    };
-    const onKeyDown = (event) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [menuOpen]);
+  const reset = () => {
+    setQ("");
+    setQuery("");
+  };
 
-  const activeDefault = maxPrice === 5 ? under5 : under15;
-  const activeLoading = query ? search.loading : activeDefault.loading;
-  const activeError   = query ? search.error   : activeDefault.error;
-  const activeDeals   = query ? search.deals   : activeDefault.deals;
-  const priceLimit = maxPrice;
+  const active = query ? search : browse;
+  const { loading, error, deals } = active;
 
-  let underLimitGroup = [];
-  let overLimitGroup  = [];
-  if (query && Array.isArray(activeDeals)) {
-    underLimitGroup = activeDeals.filter((d) => Number(d.priceValueEUR) <= priceLimit);
-    overLimitGroup  = activeDeals.filter((d) => !(Number(d.priceValueEUR) <= priceLimit));
+  let under = [];
+  let over = [];
+  if (query && Array.isArray(deals)) {
+    under = deals.filter((d) => Number(d.priceValueEUR) <= maxPrice);
+    over = deals.filter((d) => !(Number(d.priceValueEUR) <= maxPrice));
   }
 
   return (
-    <div className="min-h-full text-neutral-100">
-      <header className="sticky top-0 z-10 border-b border-white/10 backdrop-blur">
-        <nav className="mx-auto flex items-center justify-between px-4 py-3">
-          <Link to="/" className="font-bold tracking-tight text-white">Check moi ça</Link>
-          {query ? (
-            <span className="text-sm text-[color:var(--pico-muted-color)]">{`Recherche: "${query}"`}</span>
-          ) : (
-            <div className="relative" ref={menuRef}>
-              <button
-                type="button"
-                className="flex items-center gap-2 text-sm text-[color:var(--pico-muted-color)] hover:text-white"
-                aria-haspopup="menu"
-                aria-expanded={menuOpen}
-                onClick={() => setMenuOpen((open) => !open)}
-              >
-                {`Steam ≤ ${maxPrice}€`}
-                <span className="text-xs">v</span>
-              </button>
-              {menuOpen && (
-                <div
-                  role="menu"
-                  className="absolute right-0 mt-2 w-40 rounded-md border border-[#1e1f22] bg-[#313338] shadow-lg"
-                >
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-white/5 ${
-                      maxPrice === 5 ? "opacity-60" : ""
-                    }`}
-                    disabled={maxPrice === 5}
-                    onClick={() => {
-                      setMaxPrice(5);
-                      setMenuOpen(false);
-                    }}
-                  >
-                    Steam ≤ 5€
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-white/5 ${
-                      maxPrice === 15 ? "opacity-60" : ""
-                    }`}
-                    disabled={maxPrice === 15}
-                    onClick={() => {
-                      setMaxPrice(15);
-                      setMenuOpen(false);
-                    }}
-                  >
-                    Steam ≤ 15€
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </nav>
-      </header>
+    <div className="min-h-screen">
+      <a href="#resultats" className="skip-link">Aller aux résultats</a>
+      <Header onHome={reset} />
 
-      <section className="mx-auto max-w-[1100px] px-4 py-8 text-center">
-        <h1 className="text-3xl font-extrabold leading-tight md:text-5xl">Offre de jeux Steam</h1>
-        <form
-          className="mt-5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setQuery(q.trim());
-          }}
-        >
-          <input
-            type="text"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher par titre"
-            className="w-full rounded-lg border border-[#1e1f22] bg-[#313338] px-3 py-2 text-sm text-white placeholder-[#b5bac1] focus:outline-none"
-            aria-label="Rechercher un jeu"
-          />
-        </form>
+      <section className="hero">
+        <div className="container-page py-8 text-center sm:py-12">
+          <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl xl:text-5xl">Offres de jeux Steam</h1>
+          <p className="text-muted mx-auto mt-2 max-w-xl">
+            Les jeux les mieux notés à petit prix, avec avis, tags et statistiques de jeu.
+          </p>
+
+          <form
+            className="mx-auto mt-6 max-w-2xl"
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setQuery(q.trim());
+            }}
+          >
+            <div className="search">
+              <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Rechercher un jeu par titre"
+                aria-label="Rechercher un jeu"
+                autoComplete="off"
+              />
+              {(q || query) && (
+                <button type="button" className="search-clear" onClick={reset} aria-label="Effacer la recherche">
+                  ✕
+                </button>
+              )}
+              <button type="submit" className="btn btn-green" style={{ borderRadius: 0 }}>
+                Rechercher
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            <span className="text-muted text-sm" id="price-filter-label">Budget</span>
+            <div className="segmented" role="group" aria-labelledby="price-filter-label">
+              {PRICE_LIMITS.map((p) => (
+                <button key={p} type="button" aria-pressed={maxPrice === p} onClick={() => setMaxPrice(p)}>
+                  {`≤ ${p} €`}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </section>
 
-      {activeLoading && <p className="text-center mt-10">Chargement…</p>}
-      {activeError   && <p className="text-center mt-10 text-red-500">Erreur : {activeError}</p>}
+      <main id="resultats" className="container-page py-6 sm:py-8" aria-busy={loading}>
+        {loading && (
+          <>
+            <p role="status" className="sr-only">Chargement des offres…</p>
+            <SkeletonGrid />
+          </>
+        )}
 
-      {!activeLoading && !activeError && (
-        <section className="page-rails py-6">
-          <div className="mx-auto max-w-[1100px] px-4 xl:mx-0 xl:max-w-none xl:w-full xl:px-3">
-            {!query && Array.isArray(activeDeals) && <CardsGrid items={activeDeals} />}
-
-            {query && Array.isArray(activeDeals) && (
-              <>
-                <h2 className="mb-3 text-lg font-semibold">{`Jeux de moins de ${priceLimit}€`}</h2>
-                {underLimitGroup.length === 0 ? (
-                  <p className="text-center text-[#b5bac1]">Aucun résultat</p>
-                ) : (
-                  <CardsGrid items={underLimitGroup} />
-                )}
-
-                <hr className="my-8 border-t border-[var(--pico-border-color)]" />
-
-                <h2 className="mb-3 text-lg font-semibold">{`Autres résultats (≥ ${priceLimit}€)`}</h2>
-                {overLimitGroup.length === 0 ? (
-                  <p className="text-center text-[#b5bac1]">Aucun autre résultat</p>
-                ) : (
-                  <CardsGrid items={overLimitGroup} />
-                )}
-              </>
-            )}
+        {!loading && error && (
+          <div role="alert" className="notice notice-error">
+            Impossible de charger les offres ({error}).
           </div>
-        </section>
-      )}
+        )}
+
+        {!loading && !error && !query && Array.isArray(deals) && (
+          <>
+            <h2 className="text-strong mb-4 text-xl font-semibold">{`Meilleures offres à moins de ${maxPrice} €`}</h2>
+            {deals.length === 0 ? <p className="notice text-muted">Aucune offre pour le moment.</p> : <CardsGrid items={deals} />}
+          </>
+        )}
+
+        {!loading && !error && query && Array.isArray(deals) && (
+          <>
+            <h2 className="text-strong mb-4 text-xl font-semibold">
+              {`Résultats pour « ${query} » à moins de ${maxPrice} €`}
+            </h2>
+            {under.length === 0 ? <p className="notice text-muted">Aucun résultat sous {maxPrice} €.</p> : <CardsGrid items={under} />}
+
+            <h2 className="text-strong mb-4 mt-10 border-t pt-8 text-xl font-semibold" style={{ borderColor: "var(--border)" }}>
+              {`Autres résultats (au-dessus de ${maxPrice} €)`}
+            </h2>
+            {over.length === 0 ? <p className="notice text-muted">Aucun autre résultat.</p> : <CardsGrid items={over} />}
+          </>
+        )}
+      </main>
     </div>
   );
 }

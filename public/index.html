@@ -1,11 +1,25 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="Les meilleures offres Steam à petit prix, avec avis, tags et statistiques de jeu." />
+    <meta name="theme-color" content="#171a21" />
     <title>Check moi ça</title>
+    <script>
+      // Thème posé avant le premier rendu (évite le flash) : choix mémorisé, sinon préférence système.
+      (function () {
+        var t = null;
+        try { t = localStorage.getItem("theme"); } catch (e) {}
+        if (t !== "light" && t !== "dark") {
+          t = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        }
+        document.documentElement.setAttribute("data-theme", t);
+      })();
+    </script>
   </head>
   <body>
+    <noscript>Cette application nécessite JavaScript.</noscript>
     <div id="root"></div>
   </body>
 </html>

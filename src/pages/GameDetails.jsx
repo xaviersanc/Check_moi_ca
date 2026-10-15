@@ -1,36 +1,64 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import Header from "../components/Header.jsx";
 import { fetchSteamSpyApp } from "../components/steamspy";
 import { fetchSteamStoreDetails } from "../components/steamStore";
+import { USD_EUR_RATE, formatEUR, isAbort } from "../components/dealUtils";
+
+const nf = new Intl.NumberFormat("fr-FR");
 
 function toMinutesLabel(min) {
   const n = Number(min || 0);
-  return `${n} min${n >= 60 ? ` (${(n / 60).toFixed(1)} h)` : ""}`;
-}
-function stripHtml(html) {
-  if (!html) return "";
-  const withBreaks = html.replace(/<br\s*\/?>/gi, "\n");
-  const tmp = withBreaks.replace(/<[^>]+>/g, "");
-  return tmp.replace(/\s+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  return `${nf.format(n)} min${n >= 60 ? ` (${(n / 60).toFixed(1)} h)` : ""}`;
 }
 
-const USD_EUR_RATE =
-  Number(process.env.REACT_APP_USD_EUR_RATE) > 0 ? Number(process.env.REACT_APP_USD_EUR_RATE) : 0.95;
-function fmtEUR(valueEUR) {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(valueEUR);
+function stripHtml(html) {
+  if (!html) return "";
+  const text = html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&");
+  return text.replace(/\s+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
 }
+
 function priceToEUR({ store, spy }) {
-  // 1) Steam Store prioritaire
   const po = store?.price_overview;
   if (po && typeof po.final === "number") {
-    if (po.currency === "EUR") return { priceText: fmtEUR(po.final / 100), discount: po.discount_percent || 0 };
-    return { priceText: fmtEUR((po.final / 100) * USD_EUR_RATE), discount: po.discount_percent || 0 };
+    const eur = po.currency === "EUR" ? po.final / 100 : (po.final / 100) * USD_EUR_RATE;
+    const initial =
+      typeof po.initial === "number" && po.initial > po.final
+        ? po.currency === "EUR"
+          ? po.initial / 100
+          : (po.initial / 100) * USD_EUR_RATE
+        : null;
+    return { priceText: formatEUR(eur), oldText: initial ? formatEUR(initial) : null, discount: po.discount_percent || 0 };
   }
-  // 2) SteamSpy
+  if (store?.is_free) return { priceText: "Gratuit", oldText: null, discount: 0 };
   if (spy && typeof spy.price === "number" && spy.price > 0) {
-    return { priceText: fmtEUR((spy.price / 100) * USD_EUR_RATE), discount: Number(spy.discount || 0) };
+    return { priceText: formatEUR((spy.price / 100) * USD_EUR_RATE), oldText: null, discount: Number(spy.discount || 0) };
   }
-  return { priceText: "—", discount: null };
+  return { priceText: "—", oldText: null, discount: 0 };
+}
+
+function Shell({ children }) {
+  return (
+    <div className="min-h-screen">
+      <Header />
+      {children}
+    </div>
+  );
+}
+
+function Row({ label, children }) {
+  return (
+    <div className="stat-row">
+      <dt>{label}</dt>
+      <dd>{children}</dd>
+    </div>
+  );
 }
 
 export default function GameDetails() {
@@ -39,11 +67,10 @@ export default function GameDetails() {
   const [store, setStore] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
-  const steamPage = useMemo(
-    () => (appid ? `https://store.steampowered.com/app/${appid}` : null),
-    [appid]
-  );
+  const steamPage = useMemo(() => (appid ? `https://store.steampowered.com/app/${appid}` : null), [appid]);
   const headerImg = useMemo(
     () => (appid ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg` : null),
     [appid]
@@ -51,160 +78,157 @@ export default function GameDetails() {
 
   useEffect(() => {
     const ctrl = new AbortController();
+    setLoading(true);
+    setError(null);
+    setSpy(null);
+    setStore(null);
     (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [spyRes, storeRes] = await Promise.allSettled([
-          fetchSteamSpyApp(appid, { signal: ctrl.signal }),
-          fetchSteamStoreDetails(appid, { signal: ctrl.signal }),
-        ]);
-
-        setSpy(spyRes.status === "fulfilled" ? (spyRes.value || null) : null);
-        setStore(storeRes.status === "fulfilled" ? (storeRes.value || null) : null);
-
-        if (spyRes.status === "rejected" && storeRes.status === "rejected") {
-          const msg =
-            spyRes.reason?.message ||
-            storeRes.reason?.message ||
-            "Échec des requêtes";
-          throw new Error(msg);
-        }
-      } catch (e) {
-        setError(e.message || "Erreur");
-        setSpy(null);
-        setStore(null);
-      } finally {
-        setLoading(false);
+      const [spyRes, storeRes] = await Promise.allSettled([
+        fetchSteamSpyApp(appid, { signal: ctrl.signal }),
+        fetchSteamStoreDetails(appid, { signal: ctrl.signal }),
+      ]);
+      if (ctrl.signal.aborted) return; // fiche différente ou page quittée : on ignore
+      if (spyRes.status === "rejected" && storeRes.status === "rejected") {
+        const reason = [spyRes.reason, storeRes.reason].find((r) => r && !isAbort(r));
+        setError(reason?.message || "Échec des requêtes");
+      } else {
+        setSpy(spyRes.status === "fulfilled" ? spyRes.value || null : null);
+        setStore(storeRes.status === "fulfilled" ? storeRes.value || null : null);
       }
+      setLoading(false);
     })();
     return () => ctrl.abort();
-  }, [appid]);
+  }, [appid, attempt]);
 
-  if (loading) return <p className="mt-8 text-center">Chargement…</p>;
-  if (error) return <p className="mt-8 text-center text-red-500">Erreur : {error}</p>;
-  if (!spy && !store) return <p className="mt-8 text-center">Aucune donnée</p>;
+  if (loading) {
+    return (
+      <Shell>
+        <div className="container-page py-8" aria-busy="true">
+          <p role="status" className="sr-only">Chargement de la fiche…</p>
+          <div className="skeleton mb-6 h-8 w-1/2" />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="skeleton aspect-[460/215] w-full lg:col-span-2" />
+            <div className="skeleton h-64 w-full" />
+          </div>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (error) {
+    return (
+      <Shell>
+        <div className="container-page py-10">
+          <div role="alert" className="notice notice-error">
+            <p>Impossible de charger la fiche ({error}).</p>
+            <div className="mt-4 flex justify-center gap-3">
+              <button type="button" className="btn btn-blue" onClick={retry}>Réessayer</button>
+              <Link to="/" className="btn btn-green">Retour aux offres</Link>
+            </div>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (!spy && !store) {
+    return (
+      <Shell>
+        <div className="container-page py-10">
+          <div className="notice">
+            <p>Aucune donnée pour ce jeu.</p>
+            <Link to="/" className="btn btn-green mt-4">Retour aux offres</Link>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
 
   const name = store?.name ?? spy?.name ?? "—";
-  const publisher = store?.publishers?.join(", ") ?? spy?.publisher ?? "—";
-  const developer = store?.developers?.join(", ") ?? spy?.developer ?? "—";
-  const owners = spy?.owners ?? "—";
-  const ccu = Number(spy?.ccu ?? 0);
-  const avgForever = toMinutesLabel(spy?.average_forever);
-  const avg2w = toMinutesLabel(spy?.average_2weeks);
-  const scoreRank = spy?.score_rank ?? "—";
+  const publisher = store?.publishers?.join(", ") || spy?.publisher || "—";
+  const developer = store?.developers?.join(", ") || spy?.developer || "—";
   const shortDesc = stripHtml(store?.short_description);
-  const { priceText, discount } = priceToEUR({ store, spy });
-
-  const topTags = spy?.tags
+  const { priceText, oldText, discount } = priceToEUR({ store, spy });
+  const topTags = spy?.tags && typeof spy.tags === "object"
     ? Object.entries(spy.tags).sort((a, b) => b[1] - a[1]).slice(0, 12)
     : [];
 
   return (
-    <div className="min-h-full text-neutral-100">
-      {/* Bandeau */}
-      <div className="w-full bg-[#1e1f22] border-b border-[#1e1f22]">
-        <div className="mx-auto max-w-[1100px] px-4 py-6">
-          <Link to="/" className="text-sm text-[var(--pico-muted-color)] hover:underline">← Retour</Link>
-          <h1 className="mt-2 text-2xl font-bold">{name}</h1>
+    <Shell>
+      <div className="hero">
+        <div className="container-page py-6">
+          <Link to="/" className="text-sm">← Retour aux offres</Link>
+          <h1 className="text-strong mt-2 text-2xl font-bold sm:text-3xl">{name}</h1>
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1100px] px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <main className="container-page grid grid-cols-1 gap-6 py-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           {headerImg && (
             <img
               src={headerImg}
-              alt={name}
-              className="w-full h-auto rounded-lg border border-[#1e1f22]"
+              alt={`Illustration de ${name}`}
+              className="h-auto w-full rounded border"
+              style={{ borderColor: "var(--border)" }}
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
             />
           )}
 
           {topTags.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
+            <ul className="mt-4 flex flex-wrap gap-2" aria-label="Tags les plus votés" style={{ listStyle: "none", padding: 0 }}>
               {topTags.map(([tag, votes]) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs"
-                  title={`${votes} votes`}
-                >
-                  {tag}
-                </span>
+                <li key={tag}>
+                  <span className="tag" title={`${nf.format(votes)} votes`}>{tag}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
 
           {shortDesc && (
-            <div className="mt-5">
-              <h2 className="text-lg font-semibold mb-2">Description</h2>
-              <p className="text-[var(--pico-muted-color)] whitespace-pre-line">{shortDesc}</p>
-            </div>
+            <section className="panel mt-5">
+              <h2>Description</h2>
+              <p className="whitespace-pre-line">{shortDesc}</p>
+            </section>
           )}
         </div>
 
-        {/* Colonne droite (stats) */}
-        <aside className="lg:col-span-1">
-          <article className="rounded-xl border border-[#1e1f22] bg-[#313338] p-4">
-            <h3 className="text-base font-semibold mb-3">Acheter</h3>
-            <div className="flex items-baseline justify-between">
-              <div className="text-xl font-bold">{priceText}</div>
-              {typeof discount === "number" && discount > 0 && (
-                <span className="rounded-md bg-green-600/20 px-2 py-1 text-xs font-semibold text-green-400">
-                  -{discount}%
+        <aside className="space-y-4 lg:col-span-1">
+          <section className="panel" aria-labelledby="buy-h">
+            <h2 id="buy-h">Acheter</h2>
+            <div className="flex items-center justify-between gap-3">
+              <div className="price-block">
+                {discount > 0 && <span className="discount-badge">-{discount}%</span>}
+                <span className="price-lines">
+                  {oldText && <span className="price-old"><span className="sr-only">Ancien prix </span>{oldText}</span>}
+                  <span className="price" style={{ fontSize: "1.25rem" }}>{priceText}</span>
                 </span>
-              )}
+              </div>
             </div>
-            <a
-              href={steamPage || "#"}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 block w-full text-center rounded-md bg-[var(--pico-primary)] px-4 py-2 font-medium text-white hover:bg-[var(--pico-primary-hover)]"
-            >
-              Ouvrir la page Steam
+            <a href={steamPage} target="_blank" rel="noreferrer" className="btn btn-green mt-4 w-full">
+              Ouvrir sur Steam<span className="sr-only"> (nouvel onglet)</span> ↗
             </a>
-          </article>
+          </section>
 
-          <article className="mt-4 rounded-xl border border-[#1e1f22] bg-[#313338] p-4">
-            <h3 className="text-base font-semibold mb-3">Informations</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-[var(--pico-muted-color)]">Développeur</span>
-                <span className="text-right">{developer}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--pico-muted-color)]">Éditeur</span>
-                <span className="text-right">{publisher}</span>
-              </div>
-            </div>
-          </article>
+          <section className="panel" aria-labelledby="info-h">
+            <h2 id="info-h">Informations</h2>
+            <dl style={{ margin: 0 }}>
+              <Row label="Développeur">{developer}</Row>
+              <Row label="Éditeur">{publisher}</Row>
+            </dl>
+          </section>
 
-          <article className="mt-4 rounded-xl border border-[#1e1f22] bg-[#313338] p-4">
-            <h3 className="text-base font-semibold mb-3">Statistiques</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-[var(--pico-muted-color)]">Propriétaires estimés</span>
-                <span>{owners}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--pico-muted-color)]">Pic joueurs (hier)</span>
-                <span>{ccu}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--pico-muted-color)]">Temps moyen total</span>
-                <span>{avgForever}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--pico-muted-color)]">Temps moyen 2 semaines</span>
-                <span>{avg2w}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--pico-muted-color)]">Rang (avis)</span>
-                <span>{scoreRank}</span>
-              </div>
-            </div>
-          </article>
+          <section className="panel" aria-labelledby="stats-h">
+            <h2 id="stats-h">Statistiques</h2>
+            <dl style={{ margin: 0 }}>
+              <Row label="Propriétaires estimés">{spy?.owners ?? "—"}</Row>
+              <Row label="Pic joueurs (hier)">{nf.format(Number(spy?.ccu ?? 0))}</Row>
+              <Row label="Temps moyen total">{toMinutesLabel(spy?.average_forever)}</Row>
+              <Row label="Temps moyen 2 semaines">{toMinutesLabel(spy?.average_2weeks)}</Row>
+              <Row label="Rang (avis)">{spy?.score_rank || "—"}</Row>
+            </dl>
+          </section>
         </aside>
-      </div>
-    </div>
+      </main>
+    </Shell>
   );
 }

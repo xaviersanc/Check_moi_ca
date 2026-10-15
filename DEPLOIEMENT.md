@@ -31,13 +31,13 @@ Ces routes sont définies dans le dossier `/api` et sont automatiquement déploy
 ### Stratégie de récupération des données
 
 Les composants tentent plusieurs sources dans l'ordre :
-1. **Route API Vercel** (production) ou proxy local (dev)
+1. **Route API Vercel** (production uniquement ; absente en `npm start`)
 2. **API directe** (peut échouer à cause de CORS)
 3. **Proxy AllOrigins** (fallback)
 
 ## 🔧 Développement local
 
-En développement, le proxy défini dans `package.json` permet d'accéder directement aux APIs sans CORS :
+En local, les routes `/api` n’existent pas (utiliser `vercel dev` pour les tester) : l’app retombe sur l’API directe puis AlloOrigins, ce qui est plus lent et peut laisser les stats SteamSpy vides.
 
 ```bash
 npm start
