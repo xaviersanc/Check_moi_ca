@@ -1,17 +1,40 @@
 # Check moi ça
 
+![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react&logoColor=white)
+![React Router](https://img.shields.io/badge/React_Router-7-CA4245?logo=reactrouter&logoColor=white)
+![Create React App](https://img.shields.io/badge/Create_React_App-5.0.1-09D3AC?logo=createreactapp&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E?logo=javascript&logoColor=black)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss&logoColor=white)
+![PostCSS](https://img.shields.io/badge/PostCSS-8-DD3A0A?logo=postcss&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-serverless-5FA04E?logo=nodedotjs&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-d%C3%A9ploiement-000000?logo=vercel&logoColor=white)
+![Steam](https://img.shields.io/badge/Steam-Store_API-171A21?logo=steam&logoColor=white)
+![License](https://img.shields.io/badge/Licence-MIT-blue)
+
 L’application recense les jeux Steam les moins coûteux et centralise les informations nécessaires pour décider rapidement si un titre vaut l’achat. Elle affiche, en plus du prix, des données d’activité comme le temps de jeu médian sur les deux dernières semaines, l’estimation du nombre de joueurs récents et les tags dominants. Ces éléments permettent d’évaluer en un coup d’œil la popularité actuelle, la tendance d’usage et l’intérêt global du jeu, sans avoir à consulter plusieurs sites ou outils externes.
+
+## Fonctionnalités
+
+* Meilleures offres Steam à petit prix, classées par fiabilité des avis (borne basse de Wilson).
+* Filtre de budget **≤ 5 €** / **≤ 15 €** (les prix USD de CheapShark sont convertis en euros).
+* Recherche d’un jeu par titre, avec séparation des résultats dans / hors budget.
+* Fiche détaillée : description, éditeurs, prix, promotions, tags, temps de jeu médian et estimation des joueurs récents.
+* Thème sombre / clair et affichage responsive (ordinateur et mobile).
+
+## Auteur
+
+Projet réalisé par **Xavier SANCHEZ** ([@xaviersanc](https://github.com/xaviersanc)).
 
 
 ## Stack technique
 
 | Technologie                                       | Rôle                                      |
 | ------------------------------------------------- | ----------------------------------------- |
-| React (create-react-app)                          | Framework SPA                             |
+| React 18 (create-react-app 5)                     | Framework SPA                             |
 | JavaScript (ES6+)                                 | Logique applicative                       |
-| React Router DOM                                  | Routing                                   |
+| React Router DOM 7                                | Routing                                   |
 | Tailwind CSS + variables CSS (thèmes sombre/clair) | Mise en page responsive, identité visuelle |
-| Netlify / Vercel                                  | Déploiement                               |
+| Vercel (fonctions serverless)                     | Déploiement et proxy API                  |
 | APIs externes (CheapShark, SteamSpy, Steam Store) | Données prix, métadonnées et statistiques |
 
 ## Lancer le projet
@@ -24,17 +47,12 @@ cd Check_moi_ca
 npm install
 ```
 
-### Configuration `.env`
+### Configuration `.env` (optionnelle)
 
-```bash
-cp .env.example .env
-```
-
-`.env.example` :
+Créer un fichier `.env` à la racine pour personnaliser le taux de conversion USD → EUR (0.95 par défaut) :
 
 ```
 REACT_APP_USD_EUR_RATE=0.95
-DISABLE_ESLINT_PLUGIN=true
 ```
 
 ### Démarrage
@@ -66,15 +84,19 @@ src/
 │  ├─ steamspy.js           # Statistiques
 │  ├─ steamStore.js         # Métadonnées et prix
 │  └─ net.js                # Timeouts, retries, fallback
-├─ index.js
+├─ index.js                 # Point d'entrée + routes
 ├─ index.css
+api/
+├─ steamspy.js              # Fonction serverless (proxy SteamSpy)
+└─ steamstore.js            # Fonction serverless (proxy Steam Store)
 ```
 
 ### Routing
 
 | Route               | Description                     |
 | ------------------- | ------------------------------- |
-| `/`                 | Accueil, recherche, deals ≤ 15€ |
+| `/`                 | Accueil, recherche, offres ≤ 5€ / ≤ 15€ |
+| `*`                 | Page 404                        |
 | `/steam/app/:appid` | Détails d’un jeu                |
 
 ### Flow des données (fiche jeu)
@@ -88,8 +110,8 @@ src/
 
 ### CheapShark (prix)
 
-* Liste ≤ 15€
-  `https://www.cheapshark.com/api/1.0/deals?storeID=1&upperPrice=15`
+* Liste ≤ 5€ ou ≤ 15€ (`upperPrice` = budget choisi)
+  `https://www.cheapshark.com/api/1.0/deals?storeID=1&upperPrice=15&pageSize=60`
 * Recherche jeu par titre
   `https://www.cheapshark.com/api/1.0/deals?storeID=1&title={titre}`
 * Documentation : [https://www.postman.com/cheapshark/cheapshark-s-public-workspace/](https://www.postman.com/cheapshark/cheapshark-s-public-workspace/)
@@ -116,24 +138,10 @@ src/
 * `https://api.allorigins.win/raw?url={ENCODED_URL}`
   Utilisé automatiquement si les appels directs échouent.
 
-## Captures d’écran
-
-### Desktop
-
-
-![mobile](README\Page_d'accueil_ordi.png)
-![mobile](README\Detail_ordi.png)
-![mobile](README\Recherche1_ordi.png)
-![mobile](README\Recherche2_ordi.png)
-
-### Mobile
-
-![mobile](README\Page_d'accueil_mobile.jpg)
-![mobile](README\Detail_mobile.jpg)
-![mobile](README\Recherche_mobile.jpg)
 
 ## Notes de déploiement
 
 En production via Vercel, les appels sont routés par des fonctions serverless `/api/steamspy` et `/api/steamstore` pour contourner CORS.
 Fallback automatique vers AllOrigins si nécessaire.
+Procédure complète : voir [DEPLOIEMENT.md](DEPLOIEMENT.md).
 

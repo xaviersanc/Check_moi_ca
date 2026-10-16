@@ -1,5 +1,12 @@
 # Guide de déploiement sur Vercel
 
+![Vercel](https://img.shields.io/badge/Vercel-d%C3%A9ploiement-000000?logo=vercel&logoColor=white)
+![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react&logoColor=white)
+![Create React App](https://img.shields.io/badge/Create_React_App-5.0.1-09D3AC?logo=createreactapp&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-serverless-5FA04E?logo=nodedotjs&logoColor=white)
+
+Projet réalisé par **Xavier SANCHEZ**.
+
 ## 🚀 Déploiement automatique
 
 1. **Connectez votre dépôt GitHub à Vercel**
@@ -26,7 +33,9 @@ Pour contourner les limitations CORS, l'application utilise des routes API serve
 - `/api/steamspy?appid=XXX` - Proxy pour SteamSpy API
 - `/api/steamstore?appid=XXX` - Proxy pour Steam Store API
 
-Ces routes sont définies dans le dossier `/api` et sont automatiquement déployées comme fonctions serverless.
+Ces routes sont définies dans le dossier `/api` et sont automatiquement déployées comme fonctions serverless. Elles n'acceptent qu'un `appid` numérique (1 à 10 chiffres) et répondent 400 sinon.
+
+`vercel.json` redirige `/api/steamspy` et `/api/steamstore` vers ces fonctions, et toute autre URL vers `index.html` (nécessaire au routage côté client de React Router : `/steam/app/:appid`).
 
 ### Stratégie de récupération des données
 
@@ -55,7 +64,7 @@ serve -s build
 
 ## 🌐 Variables d'environnement (optionnel)
 
-Si vous souhaitez personnaliser le taux de conversion USD/EUR :
+À définir dans Vercel (Settings → Environment Variables) ou dans un `.env` local. Permet de personnaliser le taux de conversion USD/EUR utilisé pour les filtres de budget (≤ 5 € / ≤ 15 €) :
 
 ```env
 REACT_APP_USD_EUR_RATE=0.92
