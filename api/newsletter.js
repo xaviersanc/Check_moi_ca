@@ -5,7 +5,8 @@
 // Variables d'environnement (Vercel) :
 //   DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET   application Discord du bot
 //   NEWSLETTER_SECRET                          secret partagé avec le bot, signe aussi la session
-//   UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN   stockage (Upstash Redis, via Vercel Marketplace)
+//   KV_REST_API_URL, KV_REST_API_TOKEN         stockage (Upstash Redis, créées par l'intégration Vercel ;
+//                                              UPSTASH_REDIS_REST_URL / _TOKEN sont aussi acceptées)
 //   SITE_URL (facultatif)                      ex. https://mon-site.vercel.app, sinon l'hôte de la requête
 const crypto = require('node:crypto');
 
@@ -13,6 +14,8 @@ const KEY = 'newsletter:subscribers';
 const COOKIE = 'nl_session';
 const SESSION_SECONDS = 3600;
 
+const REDIS_URL = () => process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const REDIS_TOKEN = () => process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 const secret = () => process.env.NEWSLETTER_SECRET || '';
 const sign = (data) => crypto.createHmac('sha256', `session:${secret()}`).update(data).digest('base64url');
 const safeEqual = (a, b) => {
@@ -22,9 +25,9 @@ const safeEqual = (a, b) => {
 };
 
 async function redis(...command) {
-  const res = await fetch(process.env.UPSTASH_REDIS_REST_URL, {
+  const res = await fetch(REDIS_URL(), {
     method: 'POST',
-    headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` },
+    headers: { Authorization: `Bearer ${REDIS_TOKEN()}` },
     body: JSON.stringify(command),
   });
   const json = await res.json();
@@ -78,7 +81,7 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const { action } = req.query;
 
-  if (!secret() || !process.env.UPSTASH_REDIS_REST_URL || !process.env.DISCORD_CLIENT_ID) {
+  if (!secret() || !REDIS_URL() || !process.env.DISCORD_CLIENT_ID) {
     return res.status(503).json({ error: 'Newsletter non configurée' });
   }
 
