@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "./components/Header.jsx";
+import Footer from "./components/Footer.jsx";
 import useSteamDealsUnder from "./components/useSteamDealsUnder.js";
 import useSteamDealsByTitle from "./components/useSteamDealsByTitle.js";
 
@@ -202,6 +203,7 @@ export default function App() {
           </>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

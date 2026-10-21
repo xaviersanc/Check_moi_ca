@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header.jsx";
+import Footer from "../components/Footer.jsx";
 import { fetchSteamSpyApp } from "../components/steamspy";
 import { fetchSteamStoreDetails } from "../components/steamStore";
 import { USD_EUR_RATE, formatEUR, isAbort } from "../components/dealUtils";
@@ -45,9 +46,10 @@ function priceToEUR({ store, spy }) {
 
 function Shell({ children }) {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Header />
-      {children}
+      <div className="flex-1">{children}</div>
+      <Footer />
     </div>
   );
 }
