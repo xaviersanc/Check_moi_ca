@@ -4,7 +4,7 @@ import Header from "../components/Header.jsx";
 import Footer from "../components/Footer.jsx";
 
 const BOT_INVITE =
-  "https://discord.com/oauth2/authorize?client_id=1187813645888012338&permissions=2251799813753856&integration_type=1&scope=bot";
+  "https://discord.com/oauth2/authorize?client_id=1187813645888012338&integration_type=1&scope=applications.commands";
 const API = "/api/newsletter";
 
 async function call(action, post = false) {
@@ -60,7 +60,7 @@ export default function Newsletter() {
         <section className="mt-6">
           <h2>1. Ajoute le bot</h2>
           <p>
-            Discord n’autorise le bot à t’écrire que si tu l’as ajouté à ton compte (ou partages un serveur avec lui).{" "}
+            Discord n’autorise le bot à t’écrire que si tu l’as ajouté à ton compte (installation « utilisateur », aucun serveur requis) ou partages un serveur avec lui.{" "}
             <a href={BOT_INVITE} target="_blank" rel="noreferrer">
               Ajouter Coin Coin<span className="sr-only"> (nouvel onglet)</span>
             </a>
