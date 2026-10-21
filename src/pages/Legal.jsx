@@ -98,8 +98,9 @@ export function Privacy() {
       <section>
         <h2>1. En résumé</h2>
         <p>
-          Le site n’a ni compte utilisateur, ni publicité, ni outil d’analyse. Nous ne collectons pas
-          de données personnelles et n’utilisons pas de cookies.
+          Le site n’a pas de compte utilisateur, ni publicité, ni outil d’analyse. Sauf si vous vous abonnez
+          à la newsletter Discord (voir section 3 bis), nous ne collectons aucune donnée personnelle.
+          Aucun cookie de suivi n’est utilisé.
         </p>
       </section>
       <section>
@@ -120,6 +121,18 @@ export function Privacy() {
         </p>
       </section>
       <section>
+        <h2>3 bis. Newsletter Discord</h2>
+        <p>
+          La page Newsletter vous permet de recevoir des messages privés du bot Discord Coin Coin. Pour cela,
+          vous vous connectez via Discord (scope <code>identify</code>) : nous lisons votre identifiant Discord
+          afin de vérifier votre identité, et le conservons tant que vous restez abonné(e). Il n’est utilisé que
+          pour vous envoyer la newsletter, jamais cédé à des tiers. Un cookie technique strictement nécessaire
+          (signé, valable une heure) maintient votre connexion le temps de la visite. Vous pouvez vous désabonner
+          à tout moment sur la page Newsletter ; votre identifiant est alors effacé. Les identifiants sont
+          stockés chez Upstash (Redis) et transmis au bot lors d’un envoi.
+        </p>
+      </section>
+      <section>
         <h2>4. Hébergeur et services tiers</h2>
         <p>
           Le site est hébergé par Vercel Inc., qui peut traiter votre adresse IP et des journaux techniques
@@ -132,8 +145,9 @@ export function Privacy() {
         <h2>5. Vos droits</h2>
         <p>
           Conformément au RGPD, vous disposez d’un droit d’accès, de rectification, d’effacement, d’opposition
-          et de limitation du traitement de vos données. Comme nous ne conservons pas de données vous
-          concernant, ces droits portent principalement sur les journaux techniques de l’hébergeur. Vous pouvez
+          et de limitation du traitement de vos données. Hors newsletter, nous ne conservons pas de données vous
+          concernant ; ces droits portent alors sur les journaux techniques de l’hébergeur. Pour la newsletter,
+          le désabonnement efface votre identifiant. Vous pouvez
           aussi saisir la CNIL (<a href="https://www.cnil.fr" target="_blank" rel="noreferrer">cnil.fr<span className="sr-only"> (nouvel onglet)</span></a>).
         </p>
       </section>

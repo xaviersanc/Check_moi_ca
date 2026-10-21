@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/api/steamspy", "destination": "/api/steamspy.js" },
     { "source": "/api/steamstore", "destination": "/api/steamstore.js" },
+    { "source": "/api/newsletter", "destination": "/api/newsletter.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

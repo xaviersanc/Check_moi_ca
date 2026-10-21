@@ -9,6 +9,7 @@ export default function Footer() {
         </p>
         <nav aria-label="Informations légales">
           <ul className="footer-links">
+            <li><Link to="/newsletter">Newsletter Discord</Link></li>
             <li><Link to="/conditions-utilisation">Conditions d’utilisation</Link></li>
             <li><Link to="/politique-confidentialite">Politique de confidentialité</Link></li>
           </ul>

@@ -7,6 +7,7 @@ import GameDetails from "./pages/GameDetails";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { Terms, Privacy } from "./pages/Legal";
+import Newsletter from "./pages/Newsletter";
 
 function NotFound() {
   return (
@@ -30,6 +31,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <Route path="/steam/app/:appid" element={<GameDetails />} />
       <Route path="/conditions-utilisation" element={<Terms />} />
       <Route path="/politique-confidentialite" element={<Privacy />} />
+      <Route path="/newsletter" element={<Newsletter />} />
       <Route path="*"element={<NotFound />} />
     </Routes>
   </BrowserRouter>
