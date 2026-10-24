@@ -57,6 +57,7 @@ export function mapDeal(d) {
     images: [...steamImageCandidates(appId), d.thumb].filter(Boolean),
     steamRatingPercent: d.steamRatingPercent ?? null,
     steamRatingCount: d.steamRatingCount ?? null,
+    lastChange: Number(d.lastChange) || 0,
   };
 }
 

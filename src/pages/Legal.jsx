@@ -17,7 +17,7 @@ function LegalPage({ title, children }) {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="container-page legal flex-1 py-8">
-        <Link to="/" className="text-sm">← Retour aux offres</Link>
+        <Link to="/" className="text-sm">Retour aux offres</Link>
         <h1 className="text-strong mt-2 text-2xl font-bold sm:text-3xl">{title}</h1>
         <p className="text-muted mt-1 text-sm">Dernière mise à jour : {LAST_UPDATE}</p>
         {children}

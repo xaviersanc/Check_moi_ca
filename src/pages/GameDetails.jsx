@@ -159,7 +159,7 @@ export default function GameDetails() {
     <Shell>
       <div className="hero">
         <div className="container-page py-6">
-          <Link to="/" className="text-sm">← Retour aux offres</Link>
+          <Link to="/" className="text-sm">Retour aux offres</Link>
           <h1 className="text-strong mt-2 text-2xl font-bold sm:text-3xl">{name}</h1>
         </div>
       </div>
@@ -207,7 +207,7 @@ export default function GameDetails() {
               </div>
             </div>
             <a href={steamPage} target="_blank" rel="noreferrer" className="btn btn-green mt-4 w-full">
-              Ouvrir sur Steam<span className="sr-only"> (nouvel onglet)</span> ↗
+              Ouvrir sur Steam<span className="sr-only"> (nouvel onglet)</span>
             </a>
           </section>
 

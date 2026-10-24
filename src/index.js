@@ -8,6 +8,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { Terms, Privacy } from "./pages/Legal";
 import Newsletter from "./pages/Newsletter";
+import Favorites from "./pages/Favorites";
 
 function NotFound() {
   return (
@@ -32,6 +33,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <Route path="/conditions-utilisation" element={<Terms />} />
       <Route path="/politique-confidentialite" element={<Privacy />} />
       <Route path="/newsletter" element={<Newsletter />} />
+      <Route path="/favoris" element={<Favorites />} />
       <Route path="*"element={<NotFound />} />
     </Routes>
   </BrowserRouter>

@@ -319,6 +319,86 @@ a {
     padding: 0.1rem 0.5rem;
     font-size: 0.75rem;
   }
+  .fav-btn {
+    position: absolute;
+    right: 0.5rem;
+    top: 0.5rem;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 0;
+    background: rgba(0, 0, 0, 0.78);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.15s, color 0.15s;
+  }
+  .fav-btn:hover { transform: scale(1.1); }
+  .fav-btn svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+  .fav-btn[aria-pressed="true"] { color: #f5c518; }
+  .fav-btn[aria-pressed="true"] svg { fill: currentColor; }
+  .fav-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+  .fav-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding-right: 0.75rem;
+  }
+  .fav-row:hover { border-color: var(--accent); }
+  .fav-row-link {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .fav-row-img { width: 7.5rem; aspect-ratio: 460 / 215; object-fit: cover; background: var(--surface-2); flex: none; }
+  .fav-row-title { flex: 1; min-width: 0; color: var(--text-strong); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fav-row-price { display: flex; align-items: center; gap: 0.5rem; flex: none; }
+  .fav-banner {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.8rem;
+  }
+  .fav-banner { overflow: hidden; }
+  .fav-track { display: flex; width: max-content; }
+  .fav-banner:not(.is-scrolling) .fav-track { width: auto; }
+  .fav-banner.is-scrolling .fav-track { animation: fav-scroll 40s linear infinite; }
+  .fav-banner.is-scrolling:hover .fav-track,
+  .fav-banner.is-scrolling:focus-within .fav-track { animation-play-state: paused; }
+  .fav-list {
+    display: flex;
+    flex: none;
+    gap: 2.5rem;
+    padding: 0.35rem 2.5rem 0.35rem 0;
+    margin: 0;
+    list-style: none;
+  }
+  @keyframes fav-scroll {
+    to { transform: translateX(-50%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .fav-banner.is-scrolling { overflow-x: auto; }
+    .fav-banner.is-scrolling .fav-track { animation: none; }
+    .fav-banner.is-scrolling .fav-list[aria-hidden="true"] { display: none; }
+  }
+  .fav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .fav-item:hover .fav-item-title { color: var(--accent); text-decoration: underline; }
+  .fav-item-title { max-width: 14rem; overflow: hidden; text-overflow: ellipsis; }
+  .fav-item-discount { color: #a4d007; font-weight: 600; }
+  .fav-item-price { color: inherit; }
   .game-title {
     color: var(--text-strong);
     font-size: 1rem;

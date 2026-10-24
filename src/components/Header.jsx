@@ -22,7 +22,7 @@ function useTheme() {
   return [theme, toggle];
 }
 
-export default function Header({ onHome, children }) {
+export default function Header({ onHome, children, below }) {
   const [theme, toggle] = useTheme();
   const next = theme === "dark" ? "clair" : "sombre";
 
@@ -30,11 +30,13 @@ export default function Header({ onHome, children }) {
     <header className="site-header">
       <nav className="container-page flex items-center justify-between gap-3 py-2" aria-label="Navigation principale">
         <Link to="/" className="brand" onClick={onHome}>
-          <span className="brand-mark" aria-hidden="true">✓</span>
           Check moi ça
         </Link>
         <div className="flex items-center gap-2">
           {children}
+          <Link to="/favoris" className="header-btn" title="Mes favoris">
+            <span>Favoris</span>
+          </Link>
           <button
             type="button"
             className="header-btn"
@@ -42,11 +44,11 @@ export default function Header({ onHome, children }) {
             aria-label={`Passer au thème ${next}`}
             title={`Thème ${next}`}
           >
-            <span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>
-            <span className="hidden sm:inline">{theme === "dark" ? "Clair" : "Sombre"}</span>
+            <span>{theme === "dark" ? "Clair" : "Sombre"}</span>
           </button>
         </div>
       </nav>
+      {below}
     </header>
   );
 }
